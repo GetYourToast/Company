@@ -1,42 +1,50 @@
-import razorpay from "../config/razorpay.js";
-import Subscription from "../models/Subscription.js";
-import User from "../models/User.js";
+import User from '../models/User.js';
+import { createRazorpaySubscription } from '../services/razorpay.js';
+import { AppError } from '../utils/error.js';
 
-export const createSubscription = async (req, res) => {
+export const createSubscription = async (req, res, next) => {
   try {
-    const { userId } = req.body;
+    const { username, email, phone, description } = req.body;
 
-    if (!userId) return res.status(400).json({ message: "userId is required" });
+    console.log('Creating subscription for:', { username, email, phone });
 
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    const existingUser = await User.findOne({ phone });
+    if (existingUser) {
+      console.log('User already exists with phone:', phone);
+      throw new AppError('Phone number already registered. Please use a different number or contact support.', 409);
+    }
 
-   
-    const subscription = await razorpay.subscriptions.create({
-      plan_id: process.env.RAZORPAY_PLAN_ID, 
-      total_count: 0, 
-      customer_notify: 1,
+    const subscription = await createRazorpaySubscription({
+      username,
+      email,
+      phone,
+      description,
     });
 
-    const dbSub = await Subscription.create({
-      userId: user._id,
-      razorpaySubscriptionId: subscription.id,
-      status: subscription.status,
-      startAt: subscription.start_at ? new Date(subscription.start_at * 1000) : null,
-    });
+    console.log('Subscription created successfully:', subscription.id);
 
-    return res.status(200).json({
-      message: "Subscription created.",
-      subscriptionId: subscription.id,
-      subscription: dbSub,
+    res.status(200).json({
+      success: true,
+      data: {
+        subscriptionId: subscription.id,
+        razorpayKey: subscription.razorpay_key_id,
+        amount: subscription.plan.item.amount,
+        currency: subscription.plan.item.currency,
+        customerNotify: subscription.customer_notify,
+        userData: subscription.userData,
+      },
     });
-  } catch (err) {
-    console.error("Subscription Error:", err);
-    return res.status(500).json({ message: "Server error" });
+  } catch (error) {
+    console.error('Subscription controller error:', error.message);
+    
+    if (error.statusCode === 409) {
+      return next(error);
+    }
+
+    if (error.message && error.message.includes('already exists')) {
+      return next(new AppError('This email is already registered with another subscription. Please use a different email.', 409));
+    }
+
+    next(error);
   }
-};
-
-export const verifySubscription = async (req, res) => {
-  
-  return res.json({ message: "Verification endpoint active." });
 };

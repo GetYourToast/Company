@@ -1,14 +1,38 @@
-import dotenv from "dotenv";
-dotenv.config();
+import app from './app.js';
+import config from './config/config.js';
+import connectDB from './config/database.js';
+import { startScheduler } from './services/scheduler.js';
+import { checkEnvironment } from './utils/envCheck.js';
 
-import app from "./app.js";
-import connectDB from "./config/db.js";
-import "./cron/dailyMessageCron.js"; 
-connectDB();
+const startServer = async () => {
+  try {
+    if (!checkEnvironment()) {
+      process.exit(1);
+    }
 
+    await connectDB();
+    
+    startScheduler();
+    
+    const server = app.listen(config.port, () => {
+      console.log(`Server running on port ${config.port}`);
+    });
 
-const PORT = process.env.PORT || 6500;
+    const gracefulShutdown = () => {
+      console.log('Shutting down gracefully...');
+      server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+      });
+    };
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+    process.on('SIGTERM', gracefulShutdown);
+    process.on('SIGINT', gracefulShutdown);
+
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();

@@ -3,6 +3,13 @@ import toastLogo from "../../assets/icons/toastLogo.svg";
 import Button from '../Button/Button';
 import Footer from '../Footer/Footer';
 
+import about1 from "../../assets/images/About Page Image 1.jpg";
+import about2 from "../../assets/images/About Page Image 2.jpg";
+import about3 from "../../assets/images/About Page Image 3.jpg";
+import about4 from "../../assets/images/About Page Image 4.jpg";
+import about5 from "../../assets/images/About Page Image 5.jpg";
+
+
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-white">
@@ -30,7 +37,7 @@ export default function AboutPage() {
       {/* Hero Section with Image */}
       <div className="relative h-96 lg:h-[500px] bg-neutral-100 overflow-hidden">
         <img 
-          src="https://images.unsplash.com/photo-1721399154252-6772a4c76bbf?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+          src={about1}
           
   alt="Happy Morning"
   className="w-full h-full object-cover opacity-80"
@@ -50,16 +57,16 @@ export default function AboutPage() {
       <div className="max-w-7xl mx-auto px-6 lg:px-12 py-20 lg:py-32">
         <div className="grid lg:grid-cols-12 gap-16">
           {/* Left Column - Main Content */}
-          <div className="lg:col-span-7 space-y-8">
+          <div className="lg:col-span-7 space-y-5">
             <p className="text-2xl lg:text-3xl text-neutral-900 leading-relaxed font-light">
               We built Get Your Toast to make mornings feel a little more human.
             </p>
-            
+        
             <p className="text-lg text-neutral-600 leading-relaxed">
               Most of us wake up, grab our phones, and scroll. We see hundreds of things before we've even fully opened our eyes. We wanted to change that.
             </p>
 
-            <div className="pt-8 space-y-6">
+            <div className="pt-8 space-y-5">
               <p className="text-lg text-neutral-600 leading-relaxed">
                 This isn't a productivity hack. This isn't another app. This isn't a dopamine trap. And it's definitely not endless scrolling.
               </p>
@@ -78,7 +85,7 @@ export default function AboutPage() {
             {/* Image in Content */}
             <div className="pt-8">
               <img 
-                src="https://images.unsplash.com/photo-1499209974431-9dddcece7f88?q=80&w=2500&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+                src={about2}
                 alt="Person reading on phone with coffee"
                 className="w-full h-80 object-cover"
               />
@@ -114,7 +121,7 @@ export default function AboutPage() {
             {/* Small Image */}
             <div className="mt-8">
               <img 
-                src="https://plus.unsplash.com/premium_photo-1663054391923-d5caaba60039?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+                src={about3}
                 alt="Morning ritual"
                 className="w-full h-64 object-cover"
               />
@@ -140,12 +147,12 @@ export default function AboutPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <img 
-                src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&h=500&fit=crop" 
+                src={about4}
                 alt="Coffee cup"
                 className="w-full h-64 object-cover"
               />
               <img 
-                src="https://plus.unsplash.com/premium_photo-1661512552992-0c5b759d2b76?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
+                src={about5}
                 alt="Morning light"
                 className="w-full h-64 object-cover mt-8"
               />

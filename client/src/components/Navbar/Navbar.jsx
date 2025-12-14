@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X } from "lucide-react"; // icons for hamburger and close
-import toastLogo from "../../assets/icons/toastLogo.svg"; // adjust path
-
+import { Menu, X } from "lucide-react"; 
+import toastLogo from "../../assets/icons/toastLogo.svg"; 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 

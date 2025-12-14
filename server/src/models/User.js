@@ -1,26 +1,61 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-const UserSchema = new mongoose.Schema(
-  {
-    name: { type: String, required: true },
-
-    email: { type: String, required: true, unique: true },
-
-    phone: { type: String },
-
-    whatsappNumber: { type: String, required: true }, // used for message delivery
-
-    description: { type: String, default: "" },
-
-    trialStart: { type: Date },
-    trialEnd: { type: Date },
-
-    isSubscribed: { type: Boolean, default: false },
-
-    subscriptionId: { type: String, default: null }, // Razorpay subscription ID
+const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
+    trim: true,
   },
-  { timestamps: true }
-);
+  email: {
+    type: String,
+    required: true,
+    lowercase: true,
+    trim: true,
+  },
+  phone: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  description: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  subscriptionId: {
+    type: String,
+    required: true,
+  },
+  razorpayCustomerId: {
+    type: String,
+  },
+  subscriptionStatus: {
+    type: String,
+    enum: ['active', 'paused', 'cancelled', 'expired'],
+    default: 'active',
+  },
+  trialEndDate: {
+    type: Date,
+    required: true,
+  },
+  nextBillingDate: {
+    type: Date,
+    required: true,
+  },
+  lastMessageSentAt: {
+    type: Date,
+  },
+  welcomeMessageSent: {
+    type: Boolean,
+    default: false,
+  },
+}, {
+  timestamps: true,
+});
 
-export default mongoose.models.User ||
-  mongoose.model("User", UserSchema);
+userSchema.index({ phone: 1 }, { unique: true });
+userSchema.index({ subscriptionId: 1 });
+userSchema.index({ subscriptionStatus: 1, nextBillingDate: 1 });
+userSchema.index({ email: 1 });
+
+export default mongoose.model('User', userSchema);
