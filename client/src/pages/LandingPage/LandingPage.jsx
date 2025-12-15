@@ -1,8 +1,28 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Button from "../../components/Button/Button";
 import Navbar from "../../components/Navbar/Navbar";
+import axios from "axios";
 
 const LandingPage = () => {
+  const [userCount, setUserCount] = useState(0);
+
+    useEffect(() => {
+    const fetchUserCount = async () => {
+      try {
+        const res = await axios.get(
+          `${import.meta.env.VITE_BACKEND_URL}/api/subscriptions/count`
+        );
+        setUserCount(res.data.count);
+      } catch (error) {
+        console.error("Failed to fetch user count", error);
+      }
+    };
+
+    fetchUserCount();
+  }, []);
+
+
+
   return (
     <div className="min-h-screen w-full flex flex-col justify-between bg-white text-center overflow-x-hidden sm:overflow-y-hidden overflow-y-auto">
       <Navbar />
@@ -27,7 +47,7 @@ const LandingPage = () => {
 
       {/* Footer */}
       <footer className="pb-8">
-        <h2 className="text-lg md:text-xl font-bold text-gray-900">000000</h2>
+        <h2 className="text-lg md:text-xl font-bold text-gray-900">{userCount}</h2>
         <p className="text-gray-500 text-sm">users love our toasts, everyday!</p>
       </footer>
     </div>

@@ -31,12 +31,11 @@ const userSchema = new mongoose.Schema({
   },
   subscriptionStatus: {
     type: String,
-    enum: ['active', 'paused', 'cancelled', 'expired'],
-    default: 'active',
+    enum: ['active', 'paused', 'cancelled', 'expired', 'pending'],
+    default: 'pending',
   },
-  trialEndDate: {
+  startDate: {
     type: Date,
-    required: true,
   },
   nextBillingDate: {
     type: Date,

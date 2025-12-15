@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Button from "../../components/Button/Button";
 import Navbar from "../../components/Navbar/Navbar";
 
@@ -9,13 +10,8 @@ import img4 from "../../assets/images/4.png";
 import img5 from "../../assets/images/5.png";
 
 const RegisterPage = () => {
-  const images = [
-   img1,
-   img2,
-   img3,
-   img4,
-   img5
-  ];
+  const navigate = useNavigate();
+  const images = [img1, img2, img3, img4, img5];
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [username, setUsername] = useState("");
@@ -135,18 +131,12 @@ const RegisterPage = () => {
       key: razorpayKey,
       subscription_id: subscriptionId,
       name: "Get Your Toast",
-      description: "Daily morning affirmations - ₹99/month after 30-day free trial",
+      description: "Daily morning affirmations - ₹99/month",
       image: "https://your-logo-url.com/logo.png",
 
       handler: function (response) {
         console.log("Payment success:", response);
-        setMessage("🎉 Welcome aboard! Your first affirmation will arrive tomorrow at 8 AM.");
-        setLoading(false);
-        
-        setUsername("");
-        setEmail("");
-        setPhone("");
-        setDescription("");
+        navigate(`/payment-success?subscription_id=${subscriptionId}`);
       },
 
       modal: {
@@ -202,7 +192,7 @@ const RegisterPage = () => {
               Start your day with warmth and positivity. Get personalized affirmations delivered to your WhatsApp every morning at 8 AM.
             </p>
             <p className="text-amber-600 font-medium text-sm mt-3">
-              ✨ 30 days free trial, then just ₹99/month
+              ✨ Just ₹99/month - Cancel anytime
             </p>
           </div>
 
@@ -287,7 +277,7 @@ const RegisterPage = () => {
                 className="w-full bg-amber-500 text-white py-3 rounded-lg font-medium transition hover:bg-amber-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 disabled={loading || !razorpayLoaded}
               >
-                {loading ? "Processing..." : razorpayLoaded ? "Start Free Trial" : "Loading..."}
+                {loading ? "Processing..." : razorpayLoaded ? "Subscribe Now - ₹99/month" : "Loading..."}
               </button>
             </div>
           </form>

@@ -1,25 +1,132 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import toastLogo from "../../assets/icons/toastLogo.svg";
 import Footer from "../../components/Footer/Footer";
-import { Link } from "react-router-dom";
 import Button from "../../components/Button/Button";
 
 export default function PaymentSuccessPage() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [subscriptionData, setSubscriptionData] = useState(null);
+  const [error, setError] = useState(null);
+
+  const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:6500";
+
+  useEffect(() => {
+    const subscriptionId = searchParams.get('subscription_id');
+    const paymentId = searchParams.get('razorpay_payment_id');
+    const signature = searchParams.get('razorpay_signature');
+
+    if (!subscriptionId) {
+      setError('No subscription information found');
+      setLoading(false);
+      return;
+    }
+
+    fetchSubscriptionDetails(subscriptionId);
+  }, [searchParams]);
+
+  const fetchSubscriptionDetails = async (subscriptionId, retryCount = 0) => {
+    const maxRetries = 5;
+    const retryDelay = 2000;
+
+    try {
+      const response = await fetch(`${backendURL}/api/subscriptions/details/${subscriptionId}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setSubscriptionData(data.data);
+        setLoading(false);
+      } else {
+        if (retryCount < maxRetries) {
+          console.log(`Retrying... attempt ${retryCount + 1}/${maxRetries}`);
+          setTimeout(() => {
+            fetchSubscriptionDetails(subscriptionId, retryCount + 1);
+          }, retryDelay);
+        } else {
+          setError('Payment successful! Your subscription is being processed. Please check your email shortly.');
+          setLoading(false);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching subscription details:', err);
+      if (retryCount < maxRetries) {
+        console.log(`Retrying... attempt ${retryCount + 1}/${maxRetries}`);
+        setTimeout(() => {
+          fetchSubscriptionDetails(subscriptionId, retryCount + 1);
+        }, retryDelay);
+      } else {
+        setError('Payment successful! Your subscription is being processed. You will receive a confirmation message shortly.');
+        setLoading(false);
+      }
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Not available';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', { 
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <div className="text-center max-w-md px-6">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-amber-500 mx-auto mb-6"></div>
+          <h2 className="text-2xl font-bold text-neutral-900 mb-2">Processing Your Payment</h2>
+          <p className="text-neutral-600 mb-4">Please wait while we confirm your subscription...</p>
+          <p className="text-sm text-neutral-500">This usually takes a few seconds</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    const isSuccessMessage = error.includes('Payment successful');
+    
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <div className="text-center max-w-md px-6">
+          <div className={`w-16 h-16 ${isSuccessMessage ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center mx-auto mb-4`}>
+            {isSuccessMessage ? (
+              <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg className="w-8 h-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            )}
+          </div>
+          <h2 className="text-2xl font-bold text-neutral-900 mb-2">
+            {isSuccessMessage ? 'Payment Successful!' : 'Oops!'}
+          </h2>
+          <p className="text-neutral-600 mb-6">{error}</p>
+          <Button label="Go to Home" to="/" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-neutral-50">
       <div className="bg-white border-b border-neutral-200 py-8">
         <div className="flex justify-center items-center">
-            
           <div className="flex items-center space-x-2">
             <a href="/" className="flex items-center space-x-2">
-            <img
-              src={toastLogo}
-              alt="Toast Logo"
-              className="w-8 h-8 md:w-10 md:h-10"
-            />
-            <h1 className="text-lg md:text-2xl font-semibold text-gray-900 whitespace-nowrap">
-              Get your toast
-            </h1>
+              <img
+                src={toastLogo}
+                alt="Toast Logo"
+                className="w-8 h-8 md:w-10 md:h-10"
+              />
+              <h1 className="text-lg md:text-2xl font-semibold text-gray-900 whitespace-nowrap">
+                Get your toast
+              </h1>
             </a>
           </div>
         </div>
@@ -44,10 +151,9 @@ export default function PaymentSuccessPage() {
           </div>
         </div>
 
-        {/* Main Message */}
         <div className="text-center mb-12">
           <h1 className="text-4xl lg:text-5xl font-bold text-neutral-900 mb-4">
-            Welcome to the club!
+            Welcome to the club{subscriptionData?.username ? `, ${subscriptionData.username}` : ''}!
           </h1>
           <p className="text-xl text-neutral-600 leading-relaxed">
             Your payment was successful. You're all set to start receiving your
@@ -55,7 +161,6 @@ export default function PaymentSuccessPage() {
           </p>
         </div>
 
-        {/* Details Card */}
         <div className="bg-white border border-neutral-200 rounded-lg p-8 mb-8">
           <h2 className="text-lg font-semibold text-neutral-900 mb-6">
             What happens next?
@@ -71,7 +176,7 @@ export default function PaymentSuccessPage() {
                   Tomorrow morning at 8 AM
                 </h3>
                 <p className="text-neutral-600">
-                  You'll receive your first thoughtful message on WhatsApp. Make
+                  You'll receive your first thoughtful message on WhatsApp ({subscriptionData?.phone ? `at ${subscriptionData.phone}` : ''}). Make
                   sure to save our number!
                 </p>
               </div>
@@ -87,7 +192,7 @@ export default function PaymentSuccessPage() {
                 </h3>
                 <p className="text-neutral-600">
                   One message, every morning. No spam, no promotions, just your
-                  daily dose of inspiration.
+                  daily dose of inspiration personalized for you.
                 </p>
               </div>
             </div>
@@ -109,13 +214,24 @@ export default function PaymentSuccessPage() {
           </div>
         </div>
 
-        {/* Subscription Details */}
         <div className="bg-neutral-900 text-white rounded-lg p-8 mb-8">
           <h2 className="text-lg font-semibold mb-6">
             Your Subscription Details
           </h2>
 
           <div className="grid md:grid-cols-2 gap-6">
+            <div>
+              <p className="text-neutral-400 text-sm mb-1">Subscriber</p>
+              <p className="text-lg font-semibold">{subscriptionData?.username || 'Not available'}</p>
+            </div>
+            <div>
+              <p className="text-neutral-400 text-sm mb-1">Email</p>
+              <p className="text-lg font-semibold">{subscriptionData?.email || 'Not available'}</p>
+            </div>
+            <div>
+              <p className="text-neutral-400 text-sm mb-1">WhatsApp Number</p>
+              <p className="text-lg font-semibold">{subscriptionData?.phone || 'Not available'}</p>
+            </div>
             <div>
               <p className="text-neutral-400 text-sm mb-1">Plan</p>
               <p className="text-lg font-semibold">Monthly Subscription</p>
@@ -130,12 +246,12 @@ export default function PaymentSuccessPage() {
             </div>
             <div>
               <p className="text-neutral-400 text-sm mb-1">Next Billing</p>
-              <p className="text-lg font-semibold">One month from today</p>
+              <p className="text-lg font-semibold">{formatDate(subscriptionData?.nextBillingDate)}</p>
             </div>
           </div>
         </div>
 
-        <div className=" rounded-lg p-8 text-center">
+        <div className="rounded-lg p-8 text-center">
           <h2 className="text-2xl font-bold text-neutral-900 mb-3">
             Need help or have questions?
           </h2>
@@ -143,7 +259,7 @@ export default function PaymentSuccessPage() {
             We're here for you. Just drop us a message and we'll reply as soon
             as we can.
           </p>
-        <Button label="Contact Support" to="/contact" />
+          <Button label="Contact Support" to="/contact" />
         </div>
 
         <div className="text-center mt-12 pt-12 border-t border-neutral-200">
@@ -154,7 +270,7 @@ export default function PaymentSuccessPage() {
         </div>
       </div>
 
-     <Footer />
+      <Footer />
     </div>
   );
 }

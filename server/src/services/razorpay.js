@@ -72,18 +72,18 @@ export const createRazorpaySubscription = async (userData) => {
       userData.username
     );
 
-    const trialEndDate = new Date();
-    trialEndDate.setDate(trialEndDate.getDate() + config.subscription.trialDays);
+    const startDate = new Date();
+    startDate.setHours(startDate.getHours() + 1);
 
-    const nextBillingDate = new Date(trialEndDate);
-    nextBillingDate.setDate(nextBillingDate.getDate() + 1);
+    const nextBillingDate = new Date(startDate);
+    nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
 
     const userDataForNotes = {
       username: userData.username,
       email: userData.email,
       phone: userData.phone,
       description: userData.description,
-      trialEndDate: trialEndDate.toISOString(),
+      startDate: startDate.toISOString(),
       nextBillingDate: nextBillingDate.toISOString(),
     };
 
@@ -99,7 +99,7 @@ export const createRazorpaySubscription = async (userData) => {
       username: userData.username.substring(0, 255),
       email: userData.email.substring(0, 255),
       phone: userData.phone.substring(0, 255),
-      trialEndDate: trialEndDate.toISOString(),
+      startDate: startDate.toISOString(),
       nextBillingDate: nextBillingDate.toISOString(),
     };
 
@@ -112,7 +112,7 @@ export const createRazorpaySubscription = async (userData) => {
       customer_id: customer.id,
       total_count: 12,
       quantity: 1,
-      start_at: Math.floor(trialEndDate.getTime() / 1000),
+      start_at: Math.floor(startDate.getTime() / 1000),
       customer_notify: 1,
       notes: notes,
     });

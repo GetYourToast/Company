@@ -2,8 +2,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LandingPage from "../pages/LandingPage/LandingPage";
 import RegisterPage from "../pages/RegisterPage/RegisterPage";
-import PaymentPage from "../pages/PaymentPage/PaymentPage";
-
 import AboutPage from "../components/Landing/About";
 import FAQPage from "../components/Landing/FAQ";
 import TermsOfService from "../components/Agreements/TermsofService";
@@ -14,17 +12,15 @@ import PaymentSuccessPage from "../pages/ConfirmationPage/ConfirmationPage";
 const AppRoutes = () => {
   return (
     <BrowserRouter>
-    
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<AboutPage/>} />
         <Route path="/faq" element={<FAQPage/>} />
         <Route path="/contact" element={<ContactPage />} />
-        <Route path="/termsofservice" element ={<TermsOfService />} />
-         <Route path="/privacypolicy" element ={<PrivacyPolicy />} />
+        <Route path="/termsofservice" element={<TermsOfService />} />
+        <Route path="/privacypolicy" element={<PrivacyPolicy />} />
         <Route path="/subscribe" element={<RegisterPage />} />
-        <Route path="/payment" element={<PaymentPage />} />
-        <Route path="/success" element={<PaymentSuccessPage />} />
+        <Route path="/payment-success" element={<PaymentSuccessPage />} />
       </Routes>
     </BrowserRouter>
   );
