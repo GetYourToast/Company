@@ -31,7 +31,8 @@ export const createSubscription = async (req, res, next) => {
           razorpayCustomerId: subscription.customer_id,
           description: description || existingUser.description,
           subscriptionStatus: 'pending',
-          nextBillingDate: subscription.userData.nextBillingDate,
+          startDate: subscription.serviceStartDate,
+          nextBillingDate: subscription.nextBillingDate,
         });
 
         console.log('Subscription created for existing user. Status will update to active on payment.');
@@ -57,52 +58,22 @@ export const createSubscription = async (req, res, next) => {
       description,
     });
 
-    console.log('Subscription created successfully:', subscription.id);
-
-    res.status(200).json({
-      success: true,
-      data: {
-        subscriptionId: subscription.id,
-        razorpayKey: subscription.razorpay_key_id,
-        amount: subscription.plan.item.amount,
-        currency: subscription.plan.item.currency,
-        customerNotify: subscription.customer_notify,
-        userData: subscription.userData,
-      },
-    });
-  } catch (error) {
-    console.error('Subscription controller error:', error.message);
-    
-    if (error.statusCode === 409) {
-      return next(error);
-    }
-
-    if (error.message && error.message.includes('already exists')) {
-      return next(new AppError('This email is already registered with another subscription. Please use a different email.', 409));
-    }
-
-    next(error);
-  }
-}; async (req, res, next) => {
-  try {
-    const { username, email, phone, description } = req.body;
-
-    console.log('Creating subscription for:', { username, email, phone });
-
-    const existingUser = await User.findOne({ phone });
-    if (existingUser) {
-      console.log('User already exists with phone:', phone);
-      throw new AppError('Phone number already registered. Please use a different number or contact support.', 409);
-    }
-
-    const subscription = await createRazorpaySubscription({
+    const newUser = new User({
       username,
       email,
       phone,
       description,
+      subscriptionId: subscription.id,
+      razorpayCustomerId: subscription.customer_id,
+      subscriptionStatus: 'pending',
+      startDate: subscription.serviceStartDate,
+      nextBillingDate: subscription.nextBillingDate,
     });
 
+    await newUser.save();
+
     console.log('Subscription created successfully:', subscription.id);
+    console.log('User saved to database:', newUser._id);
 
     res.status(200).json({
       success: true,

@@ -72,21 +72,54 @@ export const createRazorpaySubscription = async (userData) => {
       userData.username
     );
 
-    const startDate = new Date();
-    startDate.setHours(startDate.getHours() + 1);
+    // Determine service start date based on current time
+    const now = new Date();
+    const currentHour = now.getHours();
+    
+    let serviceStartDate; // When to start sending messages at 8 AM
+    let subscriptionMessage;
+    
+    if (currentHour < 7) {
+      // Before 7:00 AM - Service starts TODAY at 8:00 AM
+      serviceStartDate = new Date(now);
+      serviceStartDate.setHours(8, 0, 0, 0);
+      subscriptionMessage = 'Your first message will arrive today at 8:00 AM';
+      console.log('⏰ Registered before 7:00 AM - Service starts TODAY at 8:00 AM');
+    } else {
+      // After 7:00 AM - Service starts TOMORROW at 8:00 AM
+      serviceStartDate = new Date(now);
+      serviceStartDate.setDate(serviceStartDate.getDate() + 1);
+      serviceStartDate.setHours(8, 0, 0, 0);
+      subscriptionMessage = 'Your first message will arrive tomorrow at 8:00 AM';
+      console.log('⏰ Registered after 7:00 AM - Service starts TOMORROW at 8:00 AM');
+    }
 
-    const nextBillingDate = new Date(startDate);
+    console.log('Current time:', now.toLocaleString('en-IN'));
+    console.log('Service start time:', serviceStartDate.toLocaleString('en-IN'));
+
+    // Subscription starts NOW for immediate payment (within 2 minutes)
+    const subscriptionStartDate = new Date(now.getTime() + (2 * 60 * 1000));
+
+    // Next billing date is 1 month from service start date (not from payment date)
+    const nextBillingDate = new Date(serviceStartDate);
     nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+
+    console.log('💰 First payment (₹99): Within 2 minutes');
+    console.log('📅 Next billing date:', nextBillingDate.toLocaleString('en-IN'));
 
     const userDataForNotes = {
       username: userData.username,
       email: userData.email,
       phone: userData.phone,
       description: userData.description,
-      startDate: startDate.toISOString(),
+      serviceStartDate: serviceStartDate.toISOString(), // When messages START (8 AM)
+      subscriptionStartDate: subscriptionStartDate.toISOString(), // When payment charged (NOW)
       nextBillingDate: nextBillingDate.toISOString(),
+      registeredAt: now.toISOString(),
+      messageTime: '08:00 AM IST',
     };
 
+    // Handle long descriptions by chunking them
     const descriptionChunks = [];
     const maxChunkSize = 240;
     const desc = userData.description || '';
@@ -95,27 +128,39 @@ export const createRazorpaySubscription = async (userData) => {
       descriptionChunks.push(desc.substring(i, i + maxChunkSize));
     }
 
+    // Prepare notes object with size limits
     const notes = {
       username: userData.username.substring(0, 255),
       email: userData.email.substring(0, 255),
       phone: userData.phone.substring(0, 255),
-      startDate: startDate.toISOString(),
+      serviceStartDate: serviceStartDate.toISOString(),
+      subscriptionStartDate: subscriptionStartDate.toISOString(),
       nextBillingDate: nextBillingDate.toISOString(),
+      registeredAt: now.toISOString(),
+      messageTime: '08:00 AM IST',
     };
+
 
     descriptionChunks.forEach((chunk, index) => {
       notes[`desc_${index}`] = chunk;
     });
 
+
     const subscription = await razorpay.subscriptions.create({
       plan_id: planId,
       customer_id: customer.id,
-      total_count: 12,
+      total_count: 12, 
       quantity: 1,
-      start_at: Math.floor(startDate.getTime() / 1000),
+      start_at: Math.floor(subscriptionStartDate.getTime() / 1000), 
       customer_notify: 1,
       notes: notes,
+      addons: [],
     });
+
+    console.log('✅ Subscription created:', subscription.id);
+    console.log('💳 Payment status: Will be charged within 2 minutes');
+    console.log('📱 First message delivery:', serviceStartDate.toLocaleString('en-IN'));
+    console.log('📅 Billing cycle: Monthly from', serviceStartDate.toLocaleDateString('en-IN'));
 
     return {
       id: subscription.id,
@@ -129,9 +174,16 @@ export const createRazorpaySubscription = async (userData) => {
       },
       customer_notify: 1,
       userData: userDataForNotes,
+      serviceStartDate: serviceStartDate.toISOString(),
+      subscriptionStartDate: subscriptionStartDate.toISOString(),
+      nextBillingDate: nextBillingDate.toISOString(),
+      subscriptionMessage: subscriptionMessage,
+      paymentMessage: 'Payment of ₹99 will be charged within 2 minutes',
+      messageTime: '8:00 AM IST Daily',
+      status: 'created',
     };
   } catch (error) {
-    console.error('Razorpay error:', error);
+    console.error('❌ Razorpay error:', error);
     if (error.error) {
       const errorMessage = error.error.description || error.error.reason || 'Failed to create subscription';
       throw new AppError(errorMessage, 500);
