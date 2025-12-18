@@ -31,9 +31,12 @@ const userSchema = new mongoose.Schema({
   },
   subscriptionStatus: {
     type: String,
-    enum: ['active', 'paused', 'cancelled', 'expired', 'pending'],
+    enum: ['active', 'paused', 'cancelled', 'expired', 'pending', 'trial'],
     default: 'pending',
   },
+  trialEndsAt: {
+  type: Date,
+},
   startDate: {
     type: Date,
   },

@@ -1,11 +1,8 @@
 import express from 'express';
-import { createSubscription, getSubscriptionDetails, syncSubscriptionStatus } from '../controllers/subscriptionController.js';
-import { validateSubscription } from '../middleware/validation.js';
+import { createSubscription } from '../controllers/subscriptionController.js';
 
 const router = express.Router();
 
-router.post('/create', validateSubscription, createSubscription);
-router.get('/details/:subscriptionId', getSubscriptionDetails);
-router.post('/sync/:subscriptionId', syncSubscriptionStatus);
+router.post('/create', createSubscription);
 
 export default router;

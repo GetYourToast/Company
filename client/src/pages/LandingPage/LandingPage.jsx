@@ -41,7 +41,7 @@ const LandingPage = () => {
         <Button label="Subscribe Now" to="/subscribe" />
 
         <p className="text-gray-500 text-sm mt-6">
-          Get Your Toast, everyday. 1 month free, then ₹99/month.
+          Get Your Toast, everyday. 7 Days free, then ₹99/month.
         </p>
       </main>
 

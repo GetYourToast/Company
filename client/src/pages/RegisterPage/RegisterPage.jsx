@@ -8,6 +8,7 @@ import img2 from "../../assets/images/2.png";
 import img3 from "../../assets/images/3.png";
 import img4 from "../../assets/images/4.png";
 import img5 from "../../assets/images/5.png";
+import logo from "../../assets/images/toastLogo.png";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -127,34 +128,36 @@ const RegisterPage = () => {
   };
 
   const openRazorpayPopup = (subscriptionId, razorpayKey, amount, currency, userData) => {
-    const options = {
-      key: razorpayKey,
-      subscription_id: subscriptionId,
-      name: "Get Your Toast",
-      description: "Daily morning affirmations - ₹99/month",
-      image: "https://your-logo-url.com/logo.png",
+   const options = {
+  key: razorpayKey,
+  subscription_id: subscriptionId,
+  name: "Get Your Toast",
+  description: "7-day free trial. ₹99/month after trial ends.",
+  image: {logo},
 
-      handler: function (response) {
-        console.log("Payment success:", response);
-        navigate(`/payment-success?subscription_id=${subscriptionId}`);
-      },
+  handler: function () {
+    navigate(`/payment-success?subscription_id=${subscriptionId}`);
+  },
 
-      modal: {
-        ondismiss: function () {
-          console.log("Payment cancelled by user");
-          setMessage("Payment cancelled. No charges were made.");
-          setLoading(false);
-        }
-      },
+  modal: {
+    ondismiss: function () {
+      setMessage("Payment cancelled. No charges were made.");
+      setLoading(false);
+    }
+  },
 
-      theme: {
-        color: "#F59E0B",
-      },
+  notes: {
+    "Trial Period": "7 days free",
+    "Charge Today": "₹0",
+    "After Trial": "₹99 per month",
+    "Billing": "Auto-debit after trial",
+  },
 
-      notes: {
-        userData: JSON.stringify(userData),
-      },
-    };
+  theme: {
+    color: "#2563EB",
+  },
+};
+
 
     const rzp = new window.Razorpay(options);
     
@@ -192,7 +195,7 @@ const RegisterPage = () => {
               Start your day with warmth and positivity. Get personalized affirmations delivered to your WhatsApp every morning at 8 AM.
             </p>
             <p className="text-amber-600 font-medium text-sm mt-3">
-              ✨ Just ₹99/month - Cancel anytime
+               ✨ 7 days FREE trial • Then just ₹99/month
             </p>
           </div>
 
@@ -272,12 +275,12 @@ const RegisterPage = () => {
             </div>
 
             <div className="pt-2">
-              <button
+                           <button
                 type="submit"
-                className="w-full bg-amber-500 text-white py-3 rounded-lg font-medium transition hover:bg-amber-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="w-full bg-amber-500 text-white py-3 rounded-lg font-medium hover:bg-amber-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                 disabled={loading || !razorpayLoaded}
               >
-                {loading ? "Processing..." : razorpayLoaded ? "Subscribe Now - ₹99/month" : "Loading..."}
+                {loading ? "Processing..." : razorpayLoaded ? "Start 7-Day Free Trial" : "Loading..."}
               </button>
             </div>
           </form>
