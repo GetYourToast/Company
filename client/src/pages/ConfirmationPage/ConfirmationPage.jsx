@@ -27,43 +27,42 @@ export default function PaymentSuccessPage() {
   }, [searchParams]);
 
   const fetchSubscriptionDetails = async (subscriptionId, attempt = 1) => {
-    const maxRetries = 8; // Increased retries
-    const retryDelay = 2000; // 2 seconds between retries
+    const maxRetries = 8; 
+    const retryDelay = 2000; 
 
     setRetryAttempt(attempt);
 
     try {
-      console.log(`🔄 Fetching subscription details (attempt ${attempt}/${maxRetries})...`);
+      console.log(`Fetching subscription details (attempt ${attempt}/${maxRetries})...`);
       
       const response = await fetch(`${backendURL}/api/subscriptions/details/${subscriptionId}`);
       const data = await response.json();
 
-      console.log('📦 Response:', data);
+      console.log('Response:', data);
 
       if (data.success && data.data) {
-        console.log('✅ Subscription found!');
+        console.log('Subscription found!');
         setSubscriptionData(data.data);
         setLoading(false);
         return;
       }
 
-      // If subscription is pending or not found yet, retry
       if (attempt < maxRetries) {
-        console.log(`⏳ Subscription not ready yet, retrying in ${retryDelay/1000}s...`);
+        console.log(`Subscription not ready yet, retrying in ${retryDelay/1000}s...`);
         setTimeout(() => {
           fetchSubscriptionDetails(subscriptionId, attempt + 1);
         }, retryDelay);
       } else {
-        // Max retries reached
-        console.log('⚠️ Max retries reached');
+     
+        console.log('Max retries reached');
         setError('Payment successful! Your subscription is being processed. Please check your email and WhatsApp shortly.');
         setLoading(false);
       }
     } catch (err) {
-      console.error('❌ Error fetching subscription:', err);
+      console.error('Error fetching subscription:', err);
       
       if (attempt < maxRetries) {
-        console.log(`🔄 Retrying due to error... (attempt ${attempt}/${maxRetries})`);
+        console.log(`Retrying due to error... (attempt ${attempt}/${maxRetries})`);
         setTimeout(() => {
           fetchSubscriptionDetails(subscriptionId, attempt + 1);
         }, retryDelay);

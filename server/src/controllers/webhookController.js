@@ -16,7 +16,7 @@ export const handleRazorpayWebhook = async (req, res, next) => {
   try {
     const event = req.body;
 
-    // Handle UPI mandate success - this fires FIRST when autopay is authorized
+
     if (event.event === 'subscription.authenticated') {
       const subscription = event.payload.subscription.entity;
       const notes = subscription.notes || {};
@@ -51,9 +51,9 @@ export const handleRazorpayWebhook = async (req, res, next) => {
 
       await user.save();
 
-      console.log('✅ User registered after UPI mandate success:', user.phone);
+      console.log('User registered after UPI mandate success:', user.phone);
 
-      // Send welcome message
+
       if (!user.welcomeMessageSent) {
         try {
           const message = await generateWelcomeMessage(
@@ -69,7 +69,7 @@ export const handleRazorpayWebhook = async (req, res, next) => {
       }
     }
 
-    // Handle subscription activation (backup/update)
+ 
     if (event.event === 'subscription.activated') {
       const subscription = event.payload.subscription.entity;
       const notes = subscription.notes || {};
@@ -104,9 +104,9 @@ export const handleRazorpayWebhook = async (req, res, next) => {
 
       await user.save();
 
-      console.log('✅ User updated on activation:', user.phone);
+      console.log('User updated on activation:', user.phone);
 
-      // Send welcome message if not sent
+   
       if (!user.welcomeMessageSent) {
         try {
           const message = await generateWelcomeMessage(
@@ -122,7 +122,7 @@ export const handleRazorpayWebhook = async (req, res, next) => {
       }
     }
 
-    // Handle subscription cancellation
+
     if (event.event === 'subscription.cancelled') {
       const subscription = event.payload.subscription.entity;
 
@@ -135,37 +135,36 @@ export const handleRazorpayWebhook = async (req, res, next) => {
         }
       );
 
-      console.log('✅ Subscription cancelled:', subscription.id);
+      console.log('Subscription cancelled:', subscription.id);
     }
 
-    // Handle subscription completion
+ 
     if (event.event === 'subscription.completed') {
       await User.findOneAndUpdate(
         { subscriptionId: event.payload.subscription.entity.id },
         { subscriptionStatus: 'expired' }
       );
 
-      console.log('✅ Subscription completed:', event.payload.subscription.entity.id);
+      console.log('Subscription completed:', event.payload.subscription.entity.id);
     }
 
-    // Handle subscription pause
+
     if (event.event === 'subscription.paused') {
       await User.findOneAndUpdate(
         { subscriptionId: event.payload.subscription.entity.id },
         { subscriptionStatus: 'paused' }
       );
 
-      console.log('✅ Subscription paused:', event.payload.subscription.entity.id);
+      console.log('Subscription paused:', event.payload.subscription.entity.id);
     }
 
-    // Handle subscription resumed
     if (event.event === 'subscription.resumed') {
       await User.findOneAndUpdate(
         { subscriptionId: event.payload.subscription.entity.id },
         { subscriptionStatus: 'active' }
       );
 
-      console.log('✅ Subscription resumed:', event.payload.subscription.entity.id);
+      console.log('Subscription resumed:', event.payload.subscription.entity.id);
     }
 
     res.status(200).json({ ok: true });
