@@ -10,13 +10,12 @@ export default function PaymentSuccessPage() {
   const [loading, setLoading] = useState(true);
   const [subscriptionData, setSubscriptionData] = useState(null);
   const [error, setError] = useState(null);
+  const [retryAttempt, setRetryAttempt] = useState(0);
 
   const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:6500";
 
   useEffect(() => {
     const subscriptionId = searchParams.get('subscription_id');
-    const paymentId = searchParams.get('razorpay_payment_id');
-    const signature = searchParams.get('razorpay_signature');
 
     if (!subscriptionId) {
       setError('No subscription information found');
@@ -27,34 +26,46 @@ export default function PaymentSuccessPage() {
     fetchSubscriptionDetails(subscriptionId);
   }, [searchParams]);
 
-  const fetchSubscriptionDetails = async (subscriptionId, retryCount = 0) => {
-    const maxRetries = 5;
-    const retryDelay = 2000;
+  const fetchSubscriptionDetails = async (subscriptionId, attempt = 1) => {
+    const maxRetries = 8; // Increased retries
+    const retryDelay = 2000; // 2 seconds between retries
+
+    setRetryAttempt(attempt);
 
     try {
+      console.log(`🔄 Fetching subscription details (attempt ${attempt}/${maxRetries})...`);
+      
       const response = await fetch(`${backendURL}/api/subscriptions/details/${subscriptionId}`);
       const data = await response.json();
 
-      if (data.success) {
+      console.log('📦 Response:', data);
+
+      if (data.success && data.data) {
+        console.log('✅ Subscription found!');
         setSubscriptionData(data.data);
         setLoading(false);
+        return;
+      }
+
+      // If subscription is pending or not found yet, retry
+      if (attempt < maxRetries) {
+        console.log(`⏳ Subscription not ready yet, retrying in ${retryDelay/1000}s...`);
+        setTimeout(() => {
+          fetchSubscriptionDetails(subscriptionId, attempt + 1);
+        }, retryDelay);
       } else {
-        if (retryCount < maxRetries) {
-          console.log(`Retrying... attempt ${retryCount + 1}/${maxRetries}`);
-          setTimeout(() => {
-            fetchSubscriptionDetails(subscriptionId, retryCount + 1);
-          }, retryDelay);
-        } else {
-          setError('Payment successful! Your subscription is being processed. Please check your email shortly.');
-          setLoading(false);
-        }
+        // Max retries reached
+        console.log('⚠️ Max retries reached');
+        setError('Payment successful! Your subscription is being processed. Please check your email and WhatsApp shortly.');
+        setLoading(false);
       }
     } catch (err) {
-      console.error('Error fetching subscription details:', err);
-      if (retryCount < maxRetries) {
-        console.log(`Retrying... attempt ${retryCount + 1}/${maxRetries}`);
+      console.error('❌ Error fetching subscription:', err);
+      
+      if (attempt < maxRetries) {
+        console.log(`🔄 Retrying due to error... (attempt ${attempt}/${maxRetries})`);
         setTimeout(() => {
-          fetchSubscriptionDetails(subscriptionId, retryCount + 1);
+          fetchSubscriptionDetails(subscriptionId, attempt + 1);
         }, retryDelay);
       } else {
         setError('Payment successful! Your subscription is being processed. You will receive a confirmation message shortly.');
@@ -80,7 +91,9 @@ export default function PaymentSuccessPage() {
           <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-amber-500 mx-auto mb-6"></div>
           <h2 className="text-2xl font-bold text-neutral-900 mb-2">Processing Your Payment</h2>
           <p className="text-neutral-600 mb-4">Please wait while we confirm your subscription...</p>
-          <p className="text-sm text-neutral-500">This usually takes a few seconds</p>
+          <p className="text-sm text-neutral-500">
+            {retryAttempt > 0 ? `Checking... (${retryAttempt}/8)` : 'This usually takes a few seconds'}
+          </p>
         </div>
       </div>
     );
@@ -153,7 +166,7 @@ export default function PaymentSuccessPage() {
 
         <div className="text-center mb-12">
           <h1 className="text-4xl lg:text-5xl font-bold text-neutral-900 mb-4">
-            Welcome to the club{subscriptionData?.username ? `, ${subscriptionData.username}` : ''}!
+            Welcome to the club{subscriptionData?.username ? `, ${subscriptionData.username}` : ''}! 🎉
           </h1>
           <p className="text-xl text-neutral-600 leading-relaxed">
             Your payment was successful. You're all set to start receiving your
@@ -176,7 +189,7 @@ export default function PaymentSuccessPage() {
                   Tomorrow morning at 8 AM
                 </h3>
                 <p className="text-neutral-600">
-                  You'll receive your first thoughtful message on WhatsApp ({subscriptionData?.phone ? `at ${subscriptionData.phone}` : ''}). Make
+                  You'll receive your first thoughtful message on WhatsApp{subscriptionData?.phone ? ` at ${subscriptionData.phone}` : ''}. Make
                   sure to save our number!
                 </p>
               </div>
@@ -206,6 +219,9 @@ export default function PaymentSuccessPage() {
                   Manage anytime
                 </h3>
                 <p className="text-neutral-600">
+                  {subscriptionData?.subscriptionStatus === 'trial' 
+                    ? `You're on a 7-day free trial. After that, you'll be charged ₹99/month. ` 
+                    : ''}
                   Cancel or pause your subscription anytime from your UPI app or
                   payment platform. No questions asked.
                 </p>
@@ -233,8 +249,12 @@ export default function PaymentSuccessPage() {
               <p className="text-lg font-semibold">{subscriptionData?.phone || 'Not available'}</p>
             </div>
             <div>
-              <p className="text-neutral-400 text-sm mb-1">Plan</p>
-              <p className="text-lg font-semibold">Monthly Subscription</p>
+              <p className="text-neutral-400 text-sm mb-1">Status</p>
+              <p className="text-lg font-semibold capitalize">
+                {subscriptionData?.subscriptionStatus === 'trial' ? '🎁 Free Trial' : 
+                 subscriptionData?.subscriptionStatus === 'active' ? '✅ Active' : 
+                 subscriptionData?.subscriptionStatus || 'Active'}
+              </p>
             </div>
             <div>
               <p className="text-neutral-400 text-sm mb-1">Amount</p>
@@ -244,6 +264,12 @@ export default function PaymentSuccessPage() {
               <p className="text-neutral-400 text-sm mb-1">Delivery Time</p>
               <p className="text-lg font-semibold">8:00 AM IST Daily</p>
             </div>
+            {subscriptionData?.trialEndsAt && (
+              <div>
+                <p className="text-neutral-400 text-sm mb-1">Trial Ends</p>
+                <p className="text-lg font-semibold">{formatDate(subscriptionData.trialEndsAt)}</p>
+              </div>
+            )}
             <div>
               <p className="text-neutral-400 text-sm mb-1">Next Billing</p>
               <p className="text-lg font-semibold">{formatDate(subscriptionData?.nextBillingDate)}</p>

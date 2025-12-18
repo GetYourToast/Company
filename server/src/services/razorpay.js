@@ -80,6 +80,7 @@ export const createRazorpaySubscription = async userData => {
         username: userData.username,
         email: userData.email,
         phone: userData.phone,
+        description: userData.description, 
         serviceStartDate: serviceStartDate.toISOString(),
       },
     });
