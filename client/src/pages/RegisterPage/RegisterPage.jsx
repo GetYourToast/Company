@@ -22,8 +22,47 @@ const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+  
+
+  const [isExistingUser, setIsExistingUser] = useState(false);
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null); 
 
   const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:6500";
+
+
+  useEffect(() => {
+    const prefilledData = sessionStorage.getItem("prefilledUserData");
+    if (prefilledData) {
+      try {
+        const userData = JSON.parse(prefilledData);
+        
+ 
+        setUsername(userData.username || "");
+        setEmail(userData.email || "");
+        setPhone(userData.phone ? userData.phone.replace("91", "") : "");
+        setDescription(userData.description || "");
+        setSubscriptionStatus(userData.subscriptionStatus || null);
+        setIsExistingUser(true);
+        
+
+        if (userData.subscriptionStatus === 'cancelled' || userData.subscriptionStatus === 'expired') {
+          setMessage("Welcome back! Your subscription has ended. Update your info and renew. ✨");
+        } else if (userData.subscriptionStatus === 'trial' || userData.subscriptionStatus === 'active') {
+          setMessage("Welcome back! Your information has been pre-filled. Update if needed. ✨");
+        } else {
+          setMessage("Welcome back! Your information has been pre-filled. ✨");
+        }
+        
+ 
+        sessionStorage.removeItem("prefilledUserData");
+
+        setTimeout(() => setMessage(""), 5000);
+      } catch (error) {
+        console.error("Error parsing prefilled data:", error);
+      }
+    }
+  }, []);
+
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -31,6 +70,7 @@ const RegisterPage = () => {
     }, 4000);
     return () => clearInterval(interval);
   }, [images.length]);
+
 
   useEffect(() => {
     const script = document.createElement("script");
@@ -56,6 +96,57 @@ const RegisterPage = () => {
     if (digits.length === 13 && digits.startsWith("091")) return digits.slice(1);
     return null;
   }
+
+
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
+
+    if (!username || !phone || !email || !description) {
+      setMessage("Please fill all fields ✨");
+      setLoading(false);
+      return;
+    }
+
+    const cleanNumber = sanitizeIndianNumber(phone);
+    if (!cleanNumber) {
+      setMessage("Please enter a valid 10-digit Indian number (e.g. 9812345678)");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${backendURL}/api/subscriptions/update-user`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username,
+          email,
+          phone: cleanNumber,
+          description,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update user information");
+      }
+
+      setMessage("Your information has been updated successfully!");
+      
+
+      setTimeout(() => {
+        navigate("/");
+      }, 2000);
+    } catch (err) {
+      console.error("Update error:", err);
+      setMessage("Failed to update information. Please try again.");
+      setLoading(false);
+    }
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -128,36 +219,37 @@ const RegisterPage = () => {
   };
 
   const openRazorpayPopup = (subscriptionId, razorpayKey, amount, currency, userData) => {
-   const options = {
-  key: razorpayKey,
-  subscription_id: subscriptionId,
-  name: "Get Your Toast",
-  description: "7-day free trial. ₹99/month after trial ends.",
-  image: {logo},
+    const options = {
+      key: razorpayKey,
+      subscription_id: subscriptionId,
+      name: "Get Your Toast",
+      description: isExistingUser && (subscriptionStatus === 'cancelled' || subscriptionStatus === 'expired')
+        ? "Renew your subscription. ₹99/month."
+        : "7-day free trial. ₹99/month after trial ends.",
+      image: logo,
 
-  handler: function () {
-    navigate(`/payment-success?subscription_id=${subscriptionId}`);
-  },
+      handler: function () {
+        navigate(`/payment-success?subscription_id=${subscriptionId}`);
+      },
 
-  modal: {
-    ondismiss: function () {
-      setMessage("Payment cancelled. No charges were made.");
-      setLoading(false);
-    }
-  },
+      modal: {
+        ondismiss: function () {
+          setMessage("Payment cancelled. No charges were made.");
+          setLoading(false);
+        }
+      },
 
-  notes: {
-    "Trial Period": "7 days free",
-    "Charge Today": "₹0",
-    "After Trial": "₹99 per month",
-    "Billing": "Auto-debit after trial",
-  },
+      notes: {
+        "Trial Period": isExistingUser && (subscriptionStatus === 'cancelled' || subscriptionStatus === 'expired') ? "No trial" : "7 days free",
+        "Charge Today": "₹0",
+        "After Trial": "₹99 per month",
+        "Billing": "Auto-debit after trial",
+      },
 
-  theme: {
-    color: "#2563EB",
-  },
-};
-
+      theme: {
+        color: "#2563EB",
+      },
+    };
 
     const rzp = new window.Razorpay(options);
     
@@ -169,6 +261,21 @@ const RegisterPage = () => {
 
     rzp.open();
   };
+
+  const shouldShowPayNow = isExistingUser && (subscriptionStatus === 'cancelled' || subscriptionStatus === 'expired');
+  const shouldShowUpdate = isExistingUser && (subscriptionStatus === 'trial' || subscriptionStatus === 'active');
+  
+  const buttonText = loading 
+    ? "Processing..." 
+    : shouldShowUpdate 
+      ? "Update Information" 
+      : shouldShowPayNow 
+        ? "Renew Subscription" 
+        : razorpayLoaded 
+          ? "Start 7-Day Free Trial" 
+          : "Loading...";
+
+  const handleFormSubmit = shouldShowUpdate ? handleUpdateUser : handleSubmit;
 
   return (
     <div className="min-h-screen w-full bg-white flex flex-col overflow-x-hidden sm:overflow-y-hidden overflow-y-auto">
@@ -187,6 +294,22 @@ const RegisterPage = () => {
 
         <div className="w-full md:w-1/2 flex flex-col justify-center md:pl-20">
           <div className="mb-10 text-center md:text-left">
+           
+            {isExistingUser && (
+              <div className="inline-flex items-center mb-3">
+                {(subscriptionStatus === 'trial' || subscriptionStatus === 'active') && (
+                  <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
+                    ✓ Active Subscriber
+                  </span>
+                )}
+                {(subscriptionStatus === 'cancelled' || subscriptionStatus === 'expired') && (
+                  <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-medium">
+                    ⚠ Subscription Ended
+                  </span>
+                )}
+              </div>
+            )}
+
             <h2 className="text-3xl md:text-4xl font-semibold text-gray-900 leading-snug tracking-tight mb-4">
               Everyone deserves a little love, <br className="hidden md:block" />
               <span className="text-gray-700">first thing in the morning.</span>
@@ -194,12 +317,16 @@ const RegisterPage = () => {
             <p className="text-gray-500 text-base leading-relaxed max-w-md mx-auto md:mx-0">
               Start your day with warmth and positivity. Get personalized affirmations delivered to your WhatsApp every morning at 8 AM.
             </p>
-            <p className="text-amber-600 font-medium text-sm mt-3">
-               ✨ 7 days FREE trial • Then just ₹99/month
-            </p>
+            {!shouldShowUpdate && (
+              <p className="text-amber-600 font-medium text-sm mt-3">
+                {shouldShowPayNow 
+                  ? "💫 Renew now • Just ₹99/month" 
+                  : "✨ 7 days FREE trial • Then just ₹99/month"}
+              </p>
+            )}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-7 w-full max-w-md mx-auto md:mx-0">
+          <form onSubmit={handleFormSubmit} className="space-y-7 w-full max-w-md mx-auto md:mx-0">
             <div className="flex flex-col">
               <label className="text-sm font-medium text-gray-700 mb-2">
                 First Name
@@ -242,6 +369,7 @@ const RegisterPage = () => {
                   pattern="[0-9]{10}"
                   maxLength="10"
                   required
+                  disabled={isExistingUser} 
                 />
               </div>
             </div>
@@ -250,6 +378,11 @@ const RegisterPage = () => {
               <div className="flex justify-between items-center mb-2">
                 <label className="text-sm font-medium text-gray-700">
                   Tell us about yourself
+                  {shouldShowUpdate && (
+                    <span className="text-amber-600 text-xs ml-2">
+                      (Update if anything changed)
+                    </span>
+                  )}
                 </label>
                 <span className={`text-xs ${
                   description.length > 2000 ? 'text-red-500' : 
@@ -275,19 +408,19 @@ const RegisterPage = () => {
             </div>
 
             <div className="pt-2">
-                           <button
+              <button
                 type="submit"
                 className="w-full bg-amber-500 text-white py-3 rounded-lg font-medium hover:bg-amber-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                disabled={loading || !razorpayLoaded}
+                disabled={loading || (!shouldShowUpdate && !razorpayLoaded)}
               >
-                {loading ? "Processing..." : razorpayLoaded ? "Start 7-Day Free Trial" : "Loading..."}
+                {buttonText}
               </button>
             </div>
           </form>
 
           {message && (
             <div className={`text-center md:text-left mt-6 p-4 rounded-lg ${
-              message.includes("🎉") || message.includes("Welcome") 
+              message.includes("✅") || message.includes("Welcome") 
                 ? "bg-green-50 text-green-700" 
                 : message.includes("failed") || message.includes("cancelled")
                 ? "bg-red-50 text-red-700"
@@ -298,7 +431,9 @@ const RegisterPage = () => {
           )}
 
           <p className="text-gray-400 text-center md:text-left mt-8 text-xs">
-            🔒 Secure payment via Razorpay • Cancel anytime • No hidden charges
+            {shouldShowUpdate 
+              ? "🔒 Your data is secure • Cancel anytime from settings"
+              : "🔒 Secure payment via Razorpay • Cancel anytime • No hidden charges"}
           </p>
           <p className="text-gray-400 text-center md:text-left mt-2 text-sm">
             No apps. No ads. Just good energy.

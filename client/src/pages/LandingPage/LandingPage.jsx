@@ -38,7 +38,7 @@ const LandingPage = () => {
           Sent to your WhatsApp.
         </p>
 
-        <Button label="Subscribe Now" to="/subscribe" />
+        <Button label="Subscribe Now" to="/signin" />
 
         <p className="text-gray-500 text-sm mt-6">
           Get Your Toast, everyday. 7 Days free, then ₹99/month.

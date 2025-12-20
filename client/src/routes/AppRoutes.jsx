@@ -8,6 +8,7 @@ import TermsOfService from "../components/Agreements/TermsofService";
 import PrivacyPolicy from "../components/Agreements/PrivacyPolicy";
 import ContactPage from "../components/Landing/ContactPage";
 import PaymentSuccessPage from "../pages/ConfirmationPage/ConfirmationPage";
+import AuthPage from "../pages/AuthPage/AuthPage";
 
 const AppRoutes = () => {
   return (
@@ -19,6 +20,7 @@ const AppRoutes = () => {
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/termsofservice" element={<TermsOfService />} />
         <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+        <Route path="/signin" element={<AuthPage />} />
         <Route path="/subscribe" element={<RegisterPage />} />
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
       </Routes>

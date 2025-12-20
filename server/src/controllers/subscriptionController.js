@@ -135,3 +135,40 @@ async function sendWelcomeMessageAsync(user) {
     await user.save();
   } catch {}
 }
+
+export const updateUserInfo = async (req, res, next) => {
+  try {
+    const { username, email, phone, description } = req.body;
+
+    if (!username || !email || !phone || !description) {
+      throw new AppError('Missing required fields', 400);
+    }
+
+ 
+    const user = await User.findOne({ phone });
+
+    if (!user) {
+      throw new AppError('User not found', 404);
+    }
+
+    user.username = username;
+    user.email = email;
+    user.description = description;
+    
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'User information updated successfully',
+      data: {
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        description: user.description,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
